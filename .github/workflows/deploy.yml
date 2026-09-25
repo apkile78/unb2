@@ -59,17 +59,17 @@ jobs:
           cd webvm-app
           npm install
           
-          # Place custom disk image in WebVM assets directory
+          # Move disk image into WebVM static assets
           mkdir -p public/custom-disk-images
           mv ../ladybird.ext2 public/custom-disk-images/ladybird.ext2
 
-          # Configure WebVM using a relative path for GitHub Pages subfolder compatibility
-          cat << 'EOF' > src/config_public_terminal.js
+          # Write configuration to root directory of webvm-app
+          cat << 'EOF' > config_public_terminal.js
           export const diskImageUrl = "./custom-disk-images/ladybird.ext2";
           export const diskImageType = "bytes";
           EOF
 
-          # Build static WebVM frontend
+          # Build static output
           npm run build
 
       - name: Upload Pages Artifact
