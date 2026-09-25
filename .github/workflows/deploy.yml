@@ -39,8 +39,13 @@ jobs:
           docker export $CONTAINER_ID | tar -C rootfs -xf -
           docker rm $CONTAINER_ID
 
-          # Create 900MB ext2 image to comply with GitHub Pages 1GB limit
-          dd if=/dev/zero of=ladybird.ext2 bs=1M count=900
+          # Calculate extracted size in MB and add 300MB working buffer
+          ROOTFS_MB=$(du -sm rootfs | cut -f1)
+          DISK_MB=$((ROOTFS_MB + 300))
+          echo "Rootfs size is ${ROOTFS_MB}MB. Allocating ${DISK_MB}MB image."
+
+          # Create dynamically sized ext2 image
+          dd if=/dev/zero of=ladybird.ext2 bs=1M count=$DISK_MB
           mkfs.ext2 -d rootfs -F ladybird.ext2
 
       - name: Fetch WebVM Core Engine

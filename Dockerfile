@@ -3,7 +3,7 @@ FROM debian:bookworm-slim
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install Ladybird build tools and system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
     ninja-build \
@@ -35,9 +35,9 @@ RUN apt-get update && apt-get install -y \
     e2fsprogs \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone into /home/user/ladybird and set readable permissions
+# Shallow clone Ladybird to save disk space
 RUN mkdir -p /home/user && \
-    git clone https://github.com/LadybirdBrowser/ladybird.git /home/user/ladybird && \
+    git clone --depth 1 https://github.com/LadybirdBrowser/ladybird.git /home/user/ladybird && \
     chmod -R 777 /home/user
 
 WORKDIR /home/user/ladybird
