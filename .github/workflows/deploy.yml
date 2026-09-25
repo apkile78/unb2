@@ -39,8 +39,8 @@ jobs:
           docker export $CONTAINER_ID | tar -C rootfs -xf -
           docker rm $CONTAINER_ID
 
-          # Create 4GB ext2 image for WebVM/CheerpX
-          dd if=/dev/zero of=ladybird.ext2 bs=1M count=4096
+          # Create 900MB ext2 image to comply with GitHub Pages 1GB limit
+          dd if=/dev/zero of=ladybird.ext2 bs=1M count=900
           mkfs.ext2 -d rootfs -F ladybird.ext2
 
       - name: Fetch WebVM Core Engine
@@ -59,18 +59,23 @@ jobs:
           cd webvm-app
           npm install
           
-          # Move disk image into WebVM static assets
-          mkdir -p public/custom-disk-images
-          mv ../ladybird.ext2 public/custom-disk-images/ladybird.ext2
-
-          # Write configuration to root directory of webvm-app
+          # Dynamically calculate path for GitHub Pages subfolder compatibility
           cat << 'EOF' > config_public_terminal.js
-          export const diskImageUrl = "./custom-disk-images/ladybird.ext2";
+          const basePath = window.location.pathname.endsWith('/') 
+            ? window.location.pathname 
+            : window.location.pathname + '/';
+          export const diskImageUrl = basePath + "custom-disk-images/ladybird.ext2";
           export const diskImageType = "bytes";
           EOF
 
+          cp config_public_terminal.js src/config_public_terminal.js
+
           # Build static output
           npm run build
+
+          # Copy disk image directly into build output folder
+          mkdir -p build/custom-disk-images
+          mv ../ladybird.ext2 build/custom-disk-images/ladybird.ext2
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
