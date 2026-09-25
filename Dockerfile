@@ -35,9 +35,9 @@ RUN apt-get update && apt-get install -y \
     e2fsprogs \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone the Ladybird repository into the root home directory
-WORKDIR /root
-RUN git clone https://github.com/LadybirdBrowser/ladybird.git
+# Clone into /home/user/ladybird and set readable permissions
+RUN mkdir -p /home/user && \
+    git clone https://github.com/LadybirdBrowser/ladybird.git /home/user/ladybird && \
+    chmod -R 777 /home/user
 
-# Set default directory on environment startup
-WORKDIR /root/ladybird
+WORKDIR /home/user/ladybird
