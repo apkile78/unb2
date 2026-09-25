@@ -63,9 +63,9 @@ jobs:
           mkdir -p public/custom-disk-images
           mv ../ladybird.ext2 public/custom-disk-images/ladybird.ext2
 
-          # Configure WebVM to load the custom ext2 image on startup
+          # Configure WebVM using a relative path for GitHub Pages subfolder compatibility
           cat << 'EOF' > src/config_public_terminal.js
-          export const diskImageUrl = "/custom-disk-images/ladybird.ext2";
+          export const diskImageUrl = "./custom-disk-images/ladybird.ext2";
           export const diskImageType = "bytes";
           EOF
 
