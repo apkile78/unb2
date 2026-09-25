@@ -1,0 +1,76 @@
+name: Build and Deploy Ladybird WebVM
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Container & Generate Ext2 Disk Image
+        run: |
+          docker build -t ladybird-webvm .
+          
+          # Extract container filesystem
+          CONTAINER_ID=$(docker create ladybird-webvm)
+          mkdir -p rootfs
+          docker export $CONTAINER_ID | tar -C rootfs -xf -
+          docker rm $CONTAINER_ID
+
+          # Create 4GB ext2 image for WebVM/CheerpX
+          dd if=/dev/zero of=ladybird.ext2 bs=1M count=4096
+          mkfs.ext2 -d rootfs -F ladybird.ext2
+
+      - name: Fetch WebVM Core Engine
+        uses: actions/checkout@v4
+        with:
+          repository: 'leaningtech/webvm'
+          path: 'webvm-app'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Bundle Disk Image into WebVM Static Frontend
+        run: |
+          cd webvm-app
+          npm install
+          
+          # Move disk image into WebVM static assets
+          mkdir -p public/custom-disk-images
+          mv ../ladybird.ext2 public/custom-disk-images/ladybird.ext2
+
+          # Build static output
+          npm run build
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: webvm-app/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
