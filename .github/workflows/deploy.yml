@@ -39,7 +39,7 @@ jobs:
           docker export $CONTAINER_ID | tar -C rootfs -xf -
           docker rm $CONTAINER_ID
 
-          # Calculate extracted size in MB and add 300MB working buffer
+          # Calculate size and add buffer
           ROOTFS_MB=$(du -sm rootfs | cut -f1)
           DISK_MB=$((ROOTFS_MB + 300))
           echo "Rootfs size is ${ROOTFS_MB}MB. Allocating ${DISK_MB}MB image."
@@ -64,12 +64,17 @@ jobs:
           cd webvm-app
           npm install
           
-          # Dynamically calculate path for GitHub Pages subfolder compatibility
+          # Create SSR-safe config file that checks for window existence
           cat << 'EOF' > config_public_terminal.js
-          const basePath = window.location.pathname.endsWith('/') 
-            ? window.location.pathname 
-            : window.location.pathname + '/';
-          export const diskImageUrl = basePath + "custom-disk-images/ladybird.ext2";
+          const getBasePath = () => {
+            if (typeof window !== 'undefined' && window.location) {
+              return window.location.pathname.endsWith('/') 
+                ? window.location.pathname 
+                : window.location.pathname + '/';
+            }
+            return './';
+          };
+          export const diskImageUrl = getBasePath() + "custom-disk-images/ladybird.ext2";
           export const diskImageType = "bytes";
           EOF
 
